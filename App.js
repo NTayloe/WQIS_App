@@ -4,7 +4,7 @@ import {SafeAreaView,StyleSheet,ScrollView,View,Text,TextInput,TouchableOpacity,
 import {NavigationContainer,useNavigation} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
-import {faEdit,faList,faTimes} from '@fortawesome/free-solid-svg-icons';
+import {faEdit,faList,faTimes,faInfo} from '@fortawesome/free-solid-svg-icons';
 import { useForm, Controller } from "react-hook-form";
 import { Base64 } from 'js-base64';
 import NetInfo from "@react-native-community/netinfo";
@@ -12,6 +12,17 @@ import SyncStorage from 'sync-storage';
 import moment from 'moment';
 
 function HomeScreen({ navigation }) {
+  let keys = [];
+  keys = SyncStorage.getAllKeys();
+  let savedSamples = [], sentSamples = [];
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i].charAt(0) == '!') {
+      savedSamples.push(<SavedSample key={i} name={keys[i]} />);
+    } else {
+      sentSamples.push(<SentSample key={i} name={keys[i]} />);
+    }
+  }
+
   return (
     <>
     <ScrollView style={{backgroundColor: '#E3F0F6'}}>
@@ -20,11 +31,16 @@ function HomeScreen({ navigation }) {
           <View style={{alignItems: 'center'}}>
             <Text style={{fontSize: 50, color: '#2A5171', marginTop: 20, fontWeight: 'bold'}}>WQIS</Text>
           </View>
-          {/* <View>
-            <Text style={{fontSize: 25, color: '#000000', marginTop: 20, marginBottom: 10}}>Status:</Text>
-            <Text>Not logged in...</Text>
-            <Text>2 data entries waiting on WiFi connection...</Text>
-          </View> */}
+          <View style={styles.infoBox}>
+            <View style={{flexDirection: 'row'}} >
+              <View style={{backgroundColor: '#8F8', padding: 5, alignSelf: "flex-start", borderWidth: 1, borderRadius: 15, opacity: .7, flexDirection: "row"}}>
+                <FontAwesomeIcon icon={faInfo} color="black" size={ 16 } style={{alignSelf: 'center'}} />
+              </View>
+              <Text style={{fontSize: 25, paddingLeft: 6}}>Status</Text>
+            </View>
+            <Text style={{paddingLeft: 35}}>{(JSON.stringify(savedSamples.length))} sample(s) ready to be sent to server</Text>
+            <Text style={{paddingLeft: 35}}>{(JSON.stringify(sentSamples.length))} sample(s) sent to server already</Text>
+          </View>
           <View>
             <Text style={{fontSize: 25, color: '#000000', marginTop: 20, marginBottom: 10}}>Select an option:</Text>
           </View>
@@ -351,14 +367,6 @@ function deleteData(key, { navigation }) {
   navigation.navigate("Submissions"); // reload page
 }
 
-function deleteMultipleData(type) {
-  if (type == "saved") {
-
-  } else if (type == "sent") {
-
-  }
-}
-
 const SavedSample = (props) => {
   const navigation = useNavigation();
   return (
@@ -403,8 +411,14 @@ function SubmissionsScreen({ navigation }) {
     <ScrollView style={{backgroundColor: '#E3F0F6'}}>
       <SafeAreaView style={styles.background}>
         <View>
+          <View style={styles.infoBox}>
+            <View style={{backgroundColor: '#8F8', padding: 5, alignSelf: "flex-start", borderWidth: 1, borderRadius: 15, opacity: .7}}>
+              <FontAwesomeIcon icon={faInfo} color="black" size={ 16 } style={{alignSelf: 'center'}} />
+            </View>
+            <Text>This page is used to send locally saved sample data to the server, or review recently sent data. Pressing "Delete" or "x" only deletes the data on your device, not the server's database.</Text>
+          </View>
           <View>
-            <Text style={{fontSize: 25, color: '#000000', marginTop: 20, marginBottom: 10}}>Waiting on Wi-Fi:</Text>
+            <Text style={{fontSize: 25, color: '#000000', marginTop: 20, marginBottom: 10}}>Waiting on internet:</Text>
             {savedSamples}
           </View>
           <View>
@@ -517,6 +531,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     width: 210
+  },
+  infoBox: {
+    backgroundColor: '#F2F0E1', 
+    marginTop: 20, 
+    width: 350, 
+    borderWidth: 1, 
+    borderRadius: 10,
+    padding: 5, 
+    // flexDirection: "row"
   },
   banner: {
     flex: 1, 
