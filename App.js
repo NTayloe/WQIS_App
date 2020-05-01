@@ -69,7 +69,9 @@ function HomeScreen({ navigation }) {
           </View>
           <TouchableOpacity
             style={styles.card}
-            onPress={() => navigation.navigate('Entry Form')}>
+            onPress={() => navigation.navigate('Entry Form', {
+              defaultValues: 0, key: ""
+            })}>
             <FontAwesomeIcon icon={faEdit} color="white" size={ 40 } />
             <Text style={styles.buttonText}>Enter Data</Text>
           </TouchableOpacity>
@@ -86,9 +88,11 @@ function HomeScreen({ navigation }) {
   );
 }
 
-function FormScreen({ navigation }) {
-  const { control, handleSubmit, errors } = useForm();
-  const onSubmit = data => submitData(data, { navigation });
+function FormScreen({ route, navigation }) {
+  const { defaultValues } = route.params;
+  const { key } = route.params;
+  const { control, handleSubmit, errors } = useForm({ defaultValues });
+  const onSubmit = data => submitData(data, { navigation }, key);
 
   return (
     <>
@@ -290,7 +294,7 @@ function FormScreen({ navigation }) {
   );
 }
 
-function submitData(data, { navigation }) {
+function submitData(data, { navigation }, key) {
   NetInfo.fetch().then(state => {
     if (state.isConnected) {
       fetch('http://localhost:8888/wqis/api.json', {
@@ -305,9 +309,17 @@ function submitData(data, { navigation }) {
           .then((json) => {
             if (json == "Sample data was saved!") {
               Alert.alert(json);
-              let date = moment(new Date()).format("MM/DD/YYYY_hh:mm:ss");
-              SyncStorage.set(date, data);
-              navigation.navigate('Home');
+              if (key == "") {
+                let date = moment(new Date()).format("MM/DD/YYYY_hh:mm:ss");
+                SyncStorage.set(date, data);
+                navigation.navigate('Home');
+              } else {
+                SyncStorage.remove(key);
+                let newKey = key.substring(1);
+                SyncStorage.set(newKey, data);
+                navigation.navigate('Home');
+                navigation.navigate('Submissions');
+              }
             } else if (json == "Error saving sample data") {
               Alert.alert(json + ". Check your formatting");
             } else {
@@ -316,17 +328,30 @@ function submitData(data, { navigation }) {
           })
           .catch((error) => {
             Alert.alert("There was an error connecting to the server. Saving locally...");
-            let date = moment(new Date()).format("!MM/DD/YYYY_hh:mm:ss");
-            SyncStorage.set(date, data);
-            navigation.navigate('Home');
+            if (key == "") {
+              let date = moment(new Date()).format("!MM/DD/YYYY_hh:mm:ss");
+              SyncStorage.set(date, data);
+              navigation.navigate('Home');
+            } else {
+              SyncStorage.remove(key);
+              SyncStorage.set(key, data);
+              navigation.navigate('Home');
+              navigation.navigate('Submissions');
+            }
           });
     } else {
       Alert.alert("No internet connection detected. Saving locally...");
 
-      let date = moment(new Date()).format("!MM/DD/YYYY_hh:mm:ss");
-      SyncStorage.set(date, data);
-
-      navigation.navigate('Home');
+      if (key == "") {
+        let date = moment(new Date()).format("!MM/DD/YYYY_hh:mm:ss");
+        SyncStorage.set(date, data);
+        navigation.navigate('Home');
+      } else {
+        SyncStorage.remove(key);
+        SyncStorage.set(key, data);
+        navigation.navigate('Home');
+        navigation.navigate('Submissions');
+      }
     }
   });
 }
@@ -400,6 +425,9 @@ const SavedSample = (props) => {
       <TouchableOpacity title="Delete" style={styles.deleteButton} onPress={() => deletePrompt(props.name, {navigation})}>
         <Text>Delete</Text>
       </TouchableOpacity>
+      <TouchableOpacity title="Delete" style={styles.editButton} onPress={() => navigation.navigate('Entry Form', { defaultValues: props.data, key: props.name })}>
+        <Text>Edit</Text>
+      </TouchableOpacity>
       <TouchableOpacity title="Send" style={styles.sendButton} onPress={() => resendData(props.name, SyncStorage.get(props.name), {navigation})}>
         <Text>Send</Text>
       </TouchableOpacity>
@@ -424,8 +452,8 @@ function SubmissionsScreen({ navigation }) {
   keys = SyncStorage.getAllKeys();
   let savedSamples = [], sentSamples = [];
   for (let i = keys.length-1; i >= 0; i--) {
-    if (keys[i].charAt(0) == '!') {
-      savedSamples.push(<SavedSample key={i} name={keys[i]} />);
+    if (keys[i] != null && keys[i].charAt(0) == '!') {
+      savedSamples.push(<SavedSample key={i} name={keys[i]} data={SyncStorage.get(keys[i])} />);
     } else {
       sentSamples.push(<SentSample key={i} name={keys[i]} />);
     }
@@ -516,8 +544,8 @@ const styles = StyleSheet.create({
   sendButton: {
     backgroundColor: 'rgb(150, 255, 150)',
     padding: 5,
-    paddingRight: 10,
-    paddingLeft: 10,
+    paddingRight: 5,
+    paddingLeft: 5,
     marginLeft: 5,
     marginBottom: 5,
     borderRadius: 10,
@@ -527,7 +555,18 @@ const styles = StyleSheet.create({
   deleteButton: {
     backgroundColor: 'rgb(255, 90, 90)',
     padding: 5,
+    paddingLeft: 3,
+    paddingRight: 3,
     marginLeft: 'auto',
+    marginBottom: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#000'
+  },
+  editButton: {
+    backgroundColor: 'rgb(130, 150, 255)',
+    padding: 5,
+    marginLeft: 5,
     marginBottom: 5,
     borderRadius: 10,
     borderWidth: 1,
@@ -555,7 +594,7 @@ const styles = StyleSheet.create({
     color: '#00F',
     fontWeight: 'bold',
     marginBottom: 10,
-    width: 210
+    width: 205
   },
   infoBox: {
     backgroundColor: '#F2F0E1', 
