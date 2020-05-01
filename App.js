@@ -1,7 +1,8 @@
 import 'react-native-gesture-handler';
-import React from 'react';
+import React, {useState,useEffect} from 'react';
 import {SafeAreaView,StyleSheet,ScrollView,View,Text,TextInput,TouchableOpacity,KeyboardAvoidingView,Alert} from 'react-native';
-import {NavigationContainer,useNavigation} from '@react-navigation/native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import {NavigationContainer,useNavigation,useIsFocused} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEdit,faList,faTimes,faInfo} from '@fortawesome/free-solid-svg-icons';
@@ -11,7 +12,7 @@ import NetInfo from "@react-native-community/netinfo";
 import SyncStorage from 'sync-storage';
 import moment from 'moment';
 
-function HomeScreen({ navigation }) {
+function numberOfSamples(type) {
   let keys = [];
   keys = SyncStorage.getAllKeys();
   let savedSamples = [], sentSamples = [];
@@ -22,7 +23,29 @@ function HomeScreen({ navigation }) {
       sentSamples.push(<SentSample key={i} name={keys[i]} />);
     }
   }
+  if (type == "saved") {
+    return savedSamples.length;
+  } else {
+    return sentSamples.length;
+  }
+}
 
+const NumberOfSamples = (props) => {
+  const [number, setNumber] = useState(0);
+  const isFocused = useIsFocused();
+
+   useEffect(() => {
+    if (props.name == "saved") {
+      setNumber(numberOfSamples("saved"));
+    } else {
+      setNumber(numberOfSamples("sent"));
+    }
+  }, [isFocused])
+
+  return <Text style={{fontWeight: 'bold'}}>{number}</Text>;
+}
+
+function HomeScreen({ navigation }) {
   return (
     <>
     <ScrollView style={{backgroundColor: '#E3F0F6'}}>
@@ -38,8 +61,8 @@ function HomeScreen({ navigation }) {
               </View>
               <Text style={{fontSize: 25, paddingLeft: 6}}>Status</Text>
             </View>
-            <Text style={{paddingLeft: 35}}>{(JSON.stringify(savedSamples.length))} sample(s) ready to be sent to server</Text>
-            <Text style={{paddingLeft: 35}}>{(JSON.stringify(sentSamples.length))} sample(s) sent to server already</Text>
+            <Text style={{paddingLeft: 35}}><NumberOfSamples name="saved" /> locally saved sample(s) waiting for your review and resubmission on the 'Submissions' page.</Text>
+            <Text style={{paddingLeft: 35}}><NumberOfSamples name="sent" /> sample(s) successfully sent to server this session.</Text>
           </View>
           <View>
             <Text style={{fontSize: 25, color: '#000000', marginTop: 20, marginBottom: 10}}>Select an option:</Text>
@@ -69,202 +92,200 @@ function FormScreen({ navigation }) {
 
   return (
     <>
-    <ScrollView style={{backgroundColor: '#E3F0F6'}}>
-      <SafeAreaView style={styles.background}>
-        <KeyboardAvoidingView behavior={Platform.OS == "ios" ? "padding" : "height"}>
-          <View>
-            <Text style={{fontSize: 25, color: '#000000', marginTop: 20}}>Enter sample data:</Text>
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Site Number</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="site_location_id"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: true }}
-              placeholder="Site Number..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.site_location_id && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Date (mm/dd/yyyy)</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="Date"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: true }}
-              placeholder="mm/dd/yyyy"
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numbers-and-punctuation"
-            />
-            {errors.Date && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Sample Number</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="Sample_Number"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: true }}
-              placeholder="Sample Number..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.Sample_Number && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Time (hh:mm)</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="Time"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: false }}
-              placeholder="hh:mm"
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numbers-and-punctuation"
-            />
-            {errors.Time && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Bridge to Water Height</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="Bridge_to_Water_Height"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: false }}
-              placeholder="Bridge to Water Height..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.Bridge_to_Water_Height && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Water Temperature</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="Water_Temp"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: false }}
-              placeholder="Water Temperature..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.Water_Temp && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>pH</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="pH"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: false }}
-              placeholder="pH..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.pH && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Conductivity</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="Conductivity"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: false }}
-              placeholder="Conductivity..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.Conductivity && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>TDS</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="TDS"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: false }}
-              placeholder="TDS..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.TDS && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>DO</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="DO"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: false }}
-              placeholder="DO..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.DO && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Turbidity</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="Turbidity"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ required: false }}
-              placeholder="Turbidity..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="numeric"
-            />
-            {errors.Turbidity && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
-          </View>
-          <View style={styles.inputBox}>
-            <Text>Comments</Text>
-            <Controller
-              as={TextInput}
-              control={control}
-              name="PhysicalComments"
-              style={styles.textInput}
-              onChange={args => args[0].nativeEvent.text}
-              rules={{ 
-                required: false
-              }}
-              placeholder="Comments..."
-              placeholderTextColor="#AAAAAA"
-              keyboardType="default"
-            />
-            {errors.PhysicalComments}
-          </View>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleSubmit(onSubmit)}>
-            <Text style={styles.buttonText}>Save / Submit</Text>
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </ScrollView>
+    <SafeAreaView style={styles.background}>
+      <KeyboardAwareScrollView behavior="padding" keyboardShouldPersistTaps={'handled'} style={{backgroundColor: '#E3F0F6'}} showsVerticalScrollIndicator={false}>
+        <View>
+          <Text style={{fontSize: 25, color: '#000000', marginTop: 20}}>Enter sample data:</Text>
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Site Number</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="site_location_id"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: true }}
+            placeholder="Site Number..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.site_location_id && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Date (mm/dd/yyyy)</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="Date"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: true }}
+            placeholder="mm/dd/yyyy"
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numbers-and-punctuation"
+          />
+          {errors.Date && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Sample Number</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="Sample_Number"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: true }}
+            placeholder="Sample Number..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.Sample_Number && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Time (hh:mm)</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="Time"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: false }}
+            placeholder="hh:mm"
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numbers-and-punctuation"
+          />
+          {errors.Time && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Bridge to Water Height</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="Bridge_to_Water_Height"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: false }}
+            placeholder="Bridge to Water Height..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.Bridge_to_Water_Height && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Water Temperature</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="Water_Temp"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: false }}
+            placeholder="Water Temperature..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.Water_Temp && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>pH</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="pH"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: false }}
+            placeholder="pH..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.pH && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Conductivity</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="Conductivity"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: false }}
+            placeholder="Conductivity..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.Conductivity && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>TDS</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="TDS"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: false }}
+            placeholder="TDS..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.TDS && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>DO</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="DO"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: false }}
+            placeholder="DO..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.DO && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Turbidity</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="Turbidity"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ required: false }}
+            placeholder="Turbidity..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="numeric"
+          />
+          {errors.Turbidity && <Text style={{color: '#FF0000'}}>This field is required.</Text>}
+        </View>
+        <View style={styles.inputBox}>
+          <Text>Comments</Text>
+          <Controller
+            as={TextInput}
+            control={control}
+            name="PhysicalComments"
+            style={styles.textInput}
+            onChange={args => args[0].nativeEvent.text}
+            rules={{ 
+              required: false
+            }}
+            placeholder="Comments..."
+            placeholderTextColor="#AAAAAA"
+            keyboardType="default"
+          />
+          {errors.PhysicalComments}
+        </View>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSubmit(onSubmit)}>
+          <Text style={styles.buttonText}>Save / Submit</Text>
+        </TouchableOpacity>
+      </KeyboardAwareScrollView>
+    </SafeAreaView>
     </>
   );
 }
@@ -282,15 +303,15 @@ function submitData(data, { navigation }) {
         body: JSON.stringify(data),
             }).then((response) => { return response.text(); })
           .then((json) => {
-            if (json == "Error saving sample data") {
-              Alert.alert(json + ". Check your formatting")
-            } else {
-              Alert.alert(json);
-            }
             if (json == "Sample data was saved!") {
+              Alert.alert(json);
               let date = moment(new Date()).format("MM/DD/YYYY_hh:mm:ss");
               SyncStorage.set(date, data);
               navigation.navigate('Home');
+            } else if (json == "Error saving sample data") {
+              Alert.alert(json + ". Check your formatting");
+            } else {
+              Alert.alert("Error in sample data. Check that Site Number exists in server database and that Sample Number is unique");
             }
           })
           .catch((error) => {
@@ -323,11 +344,15 @@ function resendData(key, data, { navigation }) {
         body: JSON.stringify(data),
             }).then((response) => { return response.text(); })
           .then((json) => {
-            Alert.alert(json);
             if (json == "Sample data was saved!") {
+              Alert.alert(json);
               let newKey = key.substring(1);
               SyncStorage.set(newKey, data);
               deleteData(key, {navigation});
+            } else if (json == "Error saving sample data") {
+              Alert.alert(json + ". Some of your sample data may be formatted incorrectly");
+            } else {
+              Alert.alert("Error in sample data. Check that Site Number exists in server database and that Sample Number is unique");
             }
           })
           .catch((error) => {
@@ -398,7 +423,7 @@ function SubmissionsScreen({ navigation }) {
   let keys = [];
   keys = SyncStorage.getAllKeys();
   let savedSamples = [], sentSamples = [];
-  for (let i = 0; i < keys.length; i++) {
+  for (let i = keys.length-1; i >= 0; i--) {
     if (keys[i].charAt(0) == '!') {
       savedSamples.push(<SavedSample key={i} name={keys[i]} />);
     } else {
@@ -415,7 +440,7 @@ function SubmissionsScreen({ navigation }) {
             <View style={{backgroundColor: '#8F8', padding: 5, alignSelf: "flex-start", borderWidth: 1, borderRadius: 15, opacity: .7}}>
               <FontAwesomeIcon icon={faInfo} color="black" size={ 16 } style={{alignSelf: 'center'}} />
             </View>
-            <Text>This page is used to send locally saved sample data to the server, or review recently sent data. Pressing "Delete" or "x" only deletes the data on your device, not the server's database.</Text>
+            <Text>This page is used to send locally saved sample data to the server or review recently sent data. Pressing "Delete" or "x" only deletes the data on your device, not the server's database. Press on the blue text to view the sample data.</Text>
           </View>
           <View>
             <Text style={{fontSize: 25, color: '#000000', marginTop: 20, marginBottom: 10}}>Waiting on internet:</Text>
