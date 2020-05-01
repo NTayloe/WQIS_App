@@ -390,7 +390,12 @@ function resendData(key, data, { navigation }) {
 }
 
 function getMyValue(key) {
-  Alert.alert(JSON.stringify(SyncStorage.get(key), null, 2));
+  let ret = JSON.stringify(SyncStorage.get(key), null, 2);
+  ret = ret.replace(/[{}"]/g, '');
+  ret = ret.replace("site_location_id", 'Site Number');
+  ret = ret.replace("Sample_Number", 'Sample Number');
+  ret = ret.replace(/[_]/g, ' ');
+  Alert.alert(ret);
 }
 
 function deletePrompt(key, { navigation }) {
